@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_KEY = os.getenv("API_KEY")
+import streamlit as st
+API_KEY = st.secrets["API_KEY"]
 
 
 def analyze_flower(image_bytes: bytes) -> dict:
