@@ -14,7 +14,7 @@ def analyze_flower(image_bytes: bytes) -> dict:
 
     url = (
         f"https://generativelanguage.googleapis.com/v1beta/models/"
-        f"gemini-1.5-flash:generateContent?key={API_KEY}"
+        f"gemini-2.0-flash:generateContent?key={API_KEY}"
     )
 
     prompt = """
