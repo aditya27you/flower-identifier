@@ -12,10 +12,7 @@ def analyze_flower(image_bytes: bytes) -> dict:
     Returns a dict with keys: name, scientific_name, predictions, soil, uses, care_tips, explanation, raw
     """
 
-    url = (
-        f"https://generativelanguage.googleapis.com/v1beta/models/"
-        f"gemini-2.0-flash:generateContent?key={API_KEY}"
-    )
+   url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={API_KEY}"
 
     prompt = """
 You are an expert botanist and plant identification AI.
