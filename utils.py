@@ -1,12 +1,8 @@
 import requests
 import base64
-import os
 import re
-from dotenv import load_dotenv
-
-load_dotenv()
-
 import streamlit as st
+
 API_KEY = st.secrets["API_KEY"]
 
 
@@ -100,7 +96,6 @@ def parse_response(text: str) -> dict:
         match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
         return match.group(1).strip() if match else "N/A"
 
-    # Parse top 3 predictions
     predictions = []
     pred_block = re.search(
         r"Top 3 Predictions:(.*?)(?=\nSoil:|\Z)", text, re.DOTALL | re.IGNORECASE
@@ -110,14 +105,12 @@ def parse_response(text: str) -> dict:
         for line in lines:
             line = line.strip()
             if line and line[0].isdigit():
-                # Extract flower name and confidence
                 conf_match = re.search(r"(\d+)%", line)
                 confidence = int(conf_match.group(1)) if conf_match else 80
                 name_part = re.sub(r"^\d+\.\s*", "", line)
                 name_part = re.sub(r"\s*-\s*\d+%", "", name_part).strip()
                 predictions.append({"name": name_part, "confidence": confidence})
 
-    # Fallback predictions if parsing fails
     if not predictions:
         predictions = [
             {"name": extract("Name"), "confidence": 85},
