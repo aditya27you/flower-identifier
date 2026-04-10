@@ -1,145 +1,132 @@
 import requests
 import base64
-import re
 import time
 import streamlit as st
 
-API_KEY = st.secrets["API_KEY"]
+HF_TOKEN = st.secrets["HF_TOKEN"]
 
-# Try multiple models in order if one fails
-MODELS = [
-    "gemini-1.5-flash-latest",
-    "gemini-1.5-pro-latest",
-    "gemini-2.0-flash",
-    "gemini-1.0-pro-vision-latest",
-]
+HEADERS = {"Authorization": f"Bearer {HF_TOKEN}"}
 
-PROMPT = """
-You are an expert botanist and plant identification AI.
-Carefully analyze the image and identify the flower.
+# ── Step 1: Use BLIP to caption the image ──────────────────────────────────
+BLIP_URL = "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-large"
 
-Respond STRICTLY in this exact format (do not skip any field):
+# ── Step 2: Use Mistral to generate flower details ─────────────────────────
+MISTRAL_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3"
+
+
+def caption_image(image_bytes: bytes) -> str:
+    """Use BLIP to get a text caption of the flower image."""
+    for attempt in range(3):
+        try:
+            response = requests.post(
+                BLIP_URL,
+                headers=HEADERS,
+                data=image_bytes,
+                timeout=30,
+            )
+            if response.status_code == 503:
+                # Model is loading — wait and retry
+                wait = response.json().get("estimated_time", 20)
+                time.sleep(min(wait, 20))
+                continue
+            response.raise_for_status()
+            result = response.json()
+            if isinstance(result, list) and result:
+                return result[0].get("generated_text", "a flower")
+            return "a flower"
+        except Exception:
+            time.sleep(5)
+    return "a flower"
+
+
+def get_flower_details(caption: str) -> str:
+    """Use Mistral to generate detailed flower info from caption."""
+
+    prompt = f"""<s>[INST]
+You are an expert botanist. Based on this image description: "{caption}"
+
+Identify the flower and respond STRICTLY in this exact format:
 
 Name: <common name>
 Scientific Name: <scientific name>
-Family: <plant family name>
-Origin: <country or region of origin>
+Family: <plant family>
+Origin: <country or region>
 Top 3 Predictions:
 1. <flower name> - <confidence>%
 2. <flower name> - <confidence>%
 3. <flower name> - <confidence>%
-Soil: <soil type and requirements>
-Sunlight: <full sun / partial shade / full shade>
-Watering: <watering frequency and amount>
+Soil: <soil type>
+Sunlight: <sunlight needs>
+Watering: <watering needs>
 Uses: <medicinal, decorative, culinary uses>
-Care Tips: <pruning, fertilizing, seasonal tips>
-Fun Fact: <one interesting fact about this flower>
-Native Regions: <comma separated list of countries/continents where this flower naturally grows>
-Bloom Season: <Spring / Summer / Autumn / Winter / Year-round>
-Explanation: <2-3 sentence AI explanation about this flower>
+Care Tips: <care tips>
+Fun Fact: <interesting fact>
+Native Regions: <comma separated countries or continents>
+Bloom Season: <season>
+Explanation: <2-3 sentences about this flower>
+[/INST]"""
 
-If no flower is detected, respond with:
-Name: Unknown
-Scientific Name: N/A
-Family: N/A
-Origin: N/A
-Top 3 Predictions:
-1. Not a flower - 100%
-2. N/A - 0%
-3. N/A - 0%
-Soil: N/A
-Sunlight: N/A
-Watering: N/A
-Uses: N/A
-Care Tips: N/A
-Fun Fact: N/A
-Native Regions: N/A
-Bloom Season: N/A
-Explanation: No flower was detected in the provided image. Please try again with a clear flower photo.
-"""
-
-
-def call_gemini(model: str, image_b64: str) -> dict:
-    """Call a specific Gemini model."""
-    url = (
-        f"https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{model}:generateContent?key={API_KEY}"
-    )
-    payload = {
-        "contents": [{
-            "parts": [
-                {"text": PROMPT},
-                {"inline_data": {
-                    "mime_type": "image/jpeg",
-                    "data": image_b64,
-                }}
-            ]
-        }],
-        "generationConfig": {
-            "temperature": 0.2,
-            "maxOutputTokens": 1500,
-        },
-    }
-    response = requests.post(
-        url,
-        headers={"Content-Type": "application/json"},
-        json=payload,
-        timeout=30,
-    )
-    response.raise_for_status()
-    data = response.json()
-    raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
-    return parse_response(raw_text)
+    for attempt in range(3):
+        try:
+            response = requests.post(
+                MISTRAL_URL,
+                headers=HEADERS,
+                json={
+                    "inputs": prompt,
+                    "parameters": {
+                        "max_new_tokens": 600,
+                        "temperature": 0.3,
+                        "return_full_text": False,
+                    }
+                },
+                timeout=60,
+            )
+            if response.status_code == 503:
+                wait = response.json().get("estimated_time", 20)
+                time.sleep(min(wait, 25))
+                continue
+            response.raise_for_status()
+            result = response.json()
+            if isinstance(result, list) and result:
+                return result[0].get("generated_text", "")
+            return ""
+        except Exception:
+            time.sleep(5)
+    return ""
 
 
 def analyze_flower(image_bytes: bytes) -> dict:
     """
-    Try multiple Gemini models with automatic fallback.
-    Returns parsed flower info dict.
+    Full pipeline: image → BLIP caption → Mistral details → parsed result
     """
-    image_b64 = base64.b64encode(image_bytes).decode("utf-8")
-    last_error = None
+    try:
+        # Step 1: Caption the image
+        caption = caption_image(image_bytes)
 
-    for model in MODELS:
-        try:
-            result = call_gemini(model, image_b64)
-            result["model_used"] = model
-            return result
+        # Step 2: Get flower details from caption
+        raw_text = get_flower_details(caption)
 
-        except requests.exceptions.HTTPError as e:
-            status = e.response.status_code
-            # 429 = quota exceeded → try next model
-            # 404 = model not found → try next model
-            if status in [429, 404]:
-                last_error = f"Model `{model}` unavailable (code {status}), trying next..."
-                time.sleep(1)
-                continue
-            else:
-                return error_result(f"API error {status}: {e.response.text}")
+        if not raw_text.strip():
+            return error_result("Could not generate flower details. Please try again.")
 
-        except requests.exceptions.Timeout:
-            last_error = f"Model `{model}` timed out, trying next..."
-            continue
+        result = parse_response(raw_text)
+        result["caption"] = caption
+        return result
 
-        except Exception as e:
-            last_error = str(e)
-            continue
-
-    # All models failed
-    return error_result(
-        "⚠️ All Gemini models are currently quota-limited. "
-        "Please wait 1 minute and try again, or update your API key in Streamlit secrets."
-    )
+    except Exception as e:
+        return error_result(f"Unexpected error: {str(e)}")
 
 
 def parse_response(text: str) -> dict:
-    """Parse structured Gemini response into a clean dict."""
+    """Parse structured response into a clean dict."""
+    import re
 
     def extract(label):
         pattern = rf"{label}:\s*(.+?)(?=\n[A-Za-z ]{{1,25}}:|\Z)"
         match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
         return match.group(1).strip() if match else "N/A"
 
+    # Parse predictions
     predictions = []
     pred_block = re.search(
         r"Top 3 Predictions:(.*?)(?=\nSoil:|\Z)", text, re.DOTALL | re.IGNORECASE
@@ -180,8 +167,8 @@ def parse_response(text: str) -> dict:
         "native_regions": native_regions,
         "bloom_season": extract("Bloom Season"),
         "explanation": extract("Explanation"),
+        "caption": "",
         "raw": text,
-        "model_used": "unknown",
         "error": None,
     }
 
@@ -202,7 +189,7 @@ def error_result(message: str) -> dict:
         "native_regions": [],
         "bloom_season": "N/A",
         "explanation": message,
+        "caption": "",
         "raw": message,
-        "model_used": "none",
         "error": message,
     }
