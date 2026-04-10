@@ -19,18 +19,15 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 
 .stApp {
     background: linear-gradient(160deg, #0a0f1e 0%, #111827 60%, #0d1f15 100%);
-    color: #e8e3d5;
-    min-height: 100vh;
+    color: #e8e3d5; min-height: 100vh;
 }
 
 .hero { text-align: center; padding: 2rem 1rem 1rem; }
 .hero-title {
     font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(2.2rem, 8vw, 3.5rem);
-    font-weight: 700;
+    font-size: clamp(2.2rem, 8vw, 3.5rem); font-weight: 700;
     background: linear-gradient(135deg, #fde68a, #f97316, #ec4899);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     line-height: 1.1; margin: 0;
 }
 .hero-sub {
@@ -47,20 +44,16 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
     border-color: rgba(249,115,22,0.3);
     background: linear-gradient(135deg, rgba(249,115,22,0.06), rgba(236,72,153,0.04));
 }
-.card-error {
-    border-color: rgba(239,68,68,0.3);
-    background: rgba(239,68,68,0.06);
-}
 
 .flower-hero { text-align: center; padding: 1.5rem 1rem; }
 .flower-name {
     font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(2rem, 7vw, 3rem);
-    font-weight: 700; color: #fde68a; margin: 0; line-height: 1.1;
+    font-size: clamp(2rem, 7vw, 3rem); font-weight: 700;
+    color: #fde68a; margin: 0; line-height: 1.1;
 }
 .flower-sci { font-style: italic; color: #9ca3af; font-size: clamp(0.85rem, 3vw, 1rem); margin-top: 0.3rem; }
 .flower-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 0.8rem; }
-.tag { background: rgba(249,115,22,0.15); border: 1px solid rgba(249,115,22,0.3); color: #fdba74; padding: 0.25rem 0.8rem; border-radius: 999px; font-size: 0.78rem; font-weight: 500; }
+.tag { background: rgba(249,115,22,0.15); border: 1px solid rgba(249,115,22,0.3); color: #fdba74; padding: 0.25rem 0.8rem; border-radius: 999px; font-size: 0.78rem; }
 .tag-green { background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.25); color: #86efac; }
 .tag-pink { background: rgba(236,72,153,0.12); border-color: rgba(236,72,153,0.25); color: #f9a8d4; }
 
@@ -75,6 +68,9 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 .fun-fact { background: linear-gradient(135deg, rgba(250,204,21,0.08), rgba(249,115,22,0.06)); border: 1px solid rgba(250,204,21,0.2); border-radius: 16px; padding: 1rem 1.2rem; margin: 0.8rem 0; }
 .fun-fact-text { font-size: 0.9rem; color: #fde68a; line-height: 1.6; font-style: italic; }
 
+.caption-box { background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 12px; padding: 0.8rem 1rem; margin: 0.5rem 0; }
+.caption-text { font-size: 0.82rem; color: #a5b4fc; font-style: italic; }
+
 .pred-row { margin: 0.6rem 0; }
 .pred-header { display: flex; justify-content: space-between; font-size: 0.83rem; color: #d1d5db; margin-bottom: 0.25rem; }
 .pred-track { background: rgba(255,255,255,0.06); border-radius: 999px; height: 7px; overflow: hidden; }
@@ -85,12 +81,12 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 .hist-sci { font-size: 0.75rem; color: #6b7280; font-style: italic; }
 .hist-time { font-size: 0.72rem; color: #4b5563; margin-left: auto; }
 
-.model-badge { display: inline-block; background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); color: #a5b4fc; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.72rem; margin-top: 0.5rem; }
-
 .error-box { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 16px; padding: 1.2rem 1.4rem; margin: 0.8rem 0; }
 .error-title { color: #f87171; font-weight: 600; font-size: 1rem; margin-bottom: 0.5rem; }
 .error-msg { color: #fca5a5; font-size: 0.85rem; line-height: 1.6; }
 .error-tip { color: #9ca3af; font-size: 0.8rem; margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid rgba(255,255,255,0.06); }
+
+.powered-badge { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(255,173,51,0.1); border: 1px solid rgba(255,173,51,0.2); color: #fbbf24; padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 0.72rem; }
 
 div[data-testid="stButton"] > button {
     background: linear-gradient(135deg, #f97316, #ec4899) !important;
@@ -103,7 +99,7 @@ div[data-testid="stButton"] > button:hover { opacity: 0.88 !important; }
 .stDownloadButton > button {
     background: rgba(255,255,255,0.05) !important; color: #9ca3af !important;
     border: 1px solid rgba(255,255,255,0.1) !important;
-    border-radius: 12px !important; width: 100% !important; font-size: 0.9rem !important;
+    border-radius: 12px !important; width: 100% !important;
 }
 .stTabs [data-baseweb="tab-list"] { gap: 0.5rem; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 0.3rem; }
 .stTabs [data-baseweb="tab"] { border-radius: 10px !important; color: #6b7280 !important; font-size: 0.85rem !important; }
@@ -130,6 +126,9 @@ st.markdown("""
     <div class="hero-title">🌸 Flower AI</div>
     <div class="hero-sub">Point your camera at any flower — instant AI identification</div>
 </div>
+<div style="text-align:center; margin-bottom:1.5rem;">
+    <span class="powered-badge">🤗 Powered by HuggingFace</span>
+</div>
 """, unsafe_allow_html=True)
 
 # ─── Input ────────────────────────────────────────────────────────────────────
@@ -138,7 +137,7 @@ tab1, tab2 = st.tabs(["📷 Camera", "📁 Upload"])
 img_bytes = None
 
 with tab1:
-    cam = st.camera_input("Take a photo")
+    cam = st.camera_input("Take a photo of a flower")
     if cam:
         img_bytes = cam.read()
 
@@ -147,18 +146,18 @@ with tab2:
     if upload:
         img_bytes = upload.read()
 
-# ─── Identify ────────────────────────────────────────────────────────────────
+# ─── Identify Button ─────────────────────────────────────────────────────────
 if img_bytes:
     if st.button("🔍 Identify Flower"):
-        with st.spinner("Analyzing with Gemini AI... trying available models 🌼"):
+        with st.spinner("Step 1/2: Reading image with BLIP... 👁️"):
+            pass
+        with st.spinner("Step 2/2: Generating flower details with Mistral... 🌿 (may take 20-30s first time)"):
             result = analyze_flower(img_bytes)
             st.session_state.result = result
             if result["name"] not in ["Error", "Unknown"]:
                 st.session_state.history.append({
                     "name": result["name"],
                     "scientific": result["scientific_name"],
-                    "family": result["family"],
-                    "bloom": result["bloom_season"],
                     "time": datetime.datetime.now().strftime("%H:%M"),
                 })
 
@@ -167,16 +166,16 @@ if st.session_state.result:
     r = st.session_state.result
 
     if r["error"]:
-        # ── Friendly Error UI ──
         st.markdown(f"""
         <div class="error-box">
             <div class="error-title">⚠️ Could Not Identify Flower</div>
             <div class="error-msg">{r['error']}</div>
             <div class="error-tip">
                 💡 <b>Quick fixes:</b><br>
-                • Wait 1 minute and try again<br>
-                • Go to <b>Streamlit Settings → Secrets</b> and update your API key<br>
-                • Get a new key at <b>aistudio.google.com</b> with a different Google account
+                • Wait 20-30 seconds — HuggingFace models need to warm up on first use<br>
+                • Try again — model may have been loading<br>
+                • Make sure your HF_TOKEN is set correctly in Streamlit Secrets<br>
+                • Try uploading a clearer flower image
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -184,10 +183,16 @@ if st.session_state.result:
     else:
         st.success("✅ Flower Identified!")
 
-        # Model badge
-        st.markdown(f'<div style="text-align:right"><span class="model-badge">🤖 {r.get("model_used", "gemini")}</span></div>', unsafe_allow_html=True)
+        # Show what BLIP saw
+        if r.get("caption") and r["caption"] not in ["a flower", ""]:
+            st.markdown(f"""
+            <div class="caption-box">
+                <div class="sec-label">👁️ What AI Saw</div>
+                <div class="caption-text">"{r['caption']}"</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-        # ── Flower Hero ──
+        # ── Flower Hero Card ──
         bloom_tag = f"🌼 {r['bloom_season']}" if r['bloom_season'] != 'N/A' else ""
         family_tag = f"🌿 {r['family']}" if r['family'] != 'N/A' else ""
         origin_tag = f"📍 {r['origin']}" if r['origin'] != 'N/A' else ""
@@ -215,16 +220,17 @@ if st.session_state.result:
         </div>
         """, unsafe_allow_html=True)
 
-        # ── Confidence Chart ──
-        st.markdown('<div class="sec-label" style="margin-top:1rem;">🎯 Confidence Predictions</div>', unsafe_allow_html=True)
-        bars_html = ""
-        for p in r["predictions"][:3]:
-            bars_html += f"""
-            <div class="pred-row">
-                <div class="pred-header"><span>{p['name']}</span><span><b>{p['confidence']}%</b></span></div>
-                <div class="pred-track"><div class="pred-fill" style="width:{p['confidence']}%"></div></div>
-            </div>"""
-        st.markdown(f'<div class="card">{bars_html}</div>', unsafe_allow_html=True)
+        # ── Confidence Bars ──
+        if r["predictions"]:
+            st.markdown('<div class="sec-label" style="margin-top:1rem;">🎯 Confidence Predictions</div>', unsafe_allow_html=True)
+            bars_html = ""
+            for p in r["predictions"][:3]:
+                bars_html += f"""
+                <div class="pred-row">
+                    <div class="pred-header"><span>{p['name']}</span><span><b>{p['confidence']}%</b></span></div>
+                    <div class="pred-track"><div class="pred-fill" style="width:{p['confidence']}%"></div></div>
+                </div>"""
+            st.markdown(f'<div class="card">{bars_html}</div>', unsafe_allow_html=True)
 
         # ── Care Dashboard ──
         st.markdown('<div class="sec-label" style="margin-top:1rem;">🌱 Plant Care Dashboard</div>', unsafe_allow_html=True)
@@ -234,7 +240,7 @@ if st.session_state.result:
             <div class="info-cell"><div class="info-icon">☀️</div><div class="info-title">Sunlight</div><div class="info-val">{r['sunlight']}</div></div>
             <div class="info-cell"><div class="info-icon">💧</div><div class="info-title">Watering</div><div class="info-val">{r['watering']}</div></div>
             <div class="info-cell"><div class="info-icon">✂️</div><div class="info-title">Care Tips</div><div class="info-val">{r['care_tips']}</div></div>
-            <div class="info-cell" style="grid-column: span 2;"><div class="info-icon">🌿</div><div class="info-title">Uses</div><div class="info-val">{r['uses']}</div></div>
+            <div class="info-cell" style="grid-column:span 2;"><div class="info-icon">🌿</div><div class="info-title">Uses</div><div class="info-val">{r['uses']}</div></div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -277,12 +283,12 @@ if st.session_state.result:
                 df = pd.DataFrame(map_points)
                 st.map(df, latitude="lat", longitude="lon", size=50000, color="#f97316")
                 regions_str = " · ".join([p["region"] for p in map_points])
-                st.markdown(f'<div style="text-align:center; color:#6b7280; font-size:0.78rem; margin-top:0.3rem;">📍 {regions_str}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="text-align:center;color:#6b7280;font-size:0.78rem;margin-top:0.3rem;">📍 {regions_str}</div>', unsafe_allow_html=True)
             else:
                 st.markdown(f"""
                 <div class="card">
                     <div class="sec-label">📍 Native To</div>
-                    <div style="color:#d1d5db; font-size:0.9rem;">{", ".join(r["native_regions"])}</div>
+                    <div style="color:#d1d5db;font-size:0.9rem;">{", ".join(r["native_regions"])}</div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -303,7 +309,6 @@ Scientific Name: {r['scientific_name']}
 Family:          {r['family']}
 Origin:          {r['origin']}
 Bloom Season:    {r['bloom_season']}
-Model Used:      {r.get('model_used', 'N/A')}
 
 TOP PREDICTIONS:
 {chr(10).join([f"  {i+1}. {p['name']} — {p['confidence']}%" for i, p in enumerate(r['predictions'][:3])])}
@@ -315,12 +320,11 @@ CARE INFORMATION:
   Care Tips: {r['care_tips']}
 
 USES: {r['uses']}
-
 NATIVE REGIONS: {', '.join(r['native_regions']) if r['native_regions'] else 'N/A'}
-
 FUN FACT: {r['fun_fact']}
 
-AI EXPLANATION: {r['explanation']}
+AI EXPLANATION:
+{r['explanation']}
 
 {'='*40}
 Generated by Flower AI | {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}
@@ -346,6 +350,6 @@ if st.session_state.history:
 # ─── Footer ──────────────────────────────────────────────────────────────────
 st.markdown("""
 <div style="text-align:center; margin-top:3rem; padding-bottom:2rem; color:#374151; font-size:0.78rem;">
-    Powered by Google Gemini AI &nbsp;·&nbsp; Built with Streamlit
+    Powered by HuggingFace BLIP + Mistral &nbsp;·&nbsp; Built with Streamlit
 </div>
 """, unsafe_allow_html=True)
