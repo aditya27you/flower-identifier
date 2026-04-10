@@ -5,28 +5,59 @@ import streamlit as st
 
 API_KEY = st.secrets["API_KEY"]
 
+
 def analyze_flower(image_bytes: bytes) -> dict:
     """
-    Sends image bytes to Gemini API and returns parsed flower info.
+    Sends image bytes to Gemini Vision API and returns parsed flower info.
     """
 
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+    url = (
+        f"https://generativelanguage.googleapis.com/v1beta/models/"
+        f"gemini-2.0-flash:generateContent?key={API_KEY}"
+    )
 
     prompt = """
-You are an expert botanist.
+You are an expert botanist and plant identification AI.
+Carefully analyze the image and identify the flower.
 
-Identify the flower and respond EXACTLY in this format:
+Respond STRICTLY in this exact format (do not skip any field):
 
 Name: <common name>
 Scientific Name: <scientific name>
+Family: <plant family name>
+Origin: <country or region of origin>
 Top 3 Predictions:
 1. <flower name> - <confidence>%
 2. <flower name> - <confidence>%
 3. <flower name> - <confidence>%
-Soil: <soil type>
-Uses: <uses>
-Care Tips: <tips>
-Explanation: <short explanation>
+Soil: <soil type and requirements>
+Sunlight: <full sun / partial shade / full shade>
+Watering: <watering frequency and amount>
+Uses: <medicinal, decorative, culinary uses>
+Care Tips: <pruning, fertilizing, seasonal tips>
+Fun Fact: <one interesting fact about this flower>
+Native Regions: <comma separated list of countries/continents where this flower naturally grows>
+Bloom Season: <Spring / Summer / Autumn / Winter / Year-round>
+Explanation: <2-3 sentence AI explanation about this flower>
+
+If no flower is detected, respond with:
+Name: Unknown
+Scientific Name: N/A
+Family: N/A
+Origin: N/A
+Top 3 Predictions:
+1. Not a flower - 100%
+2. N/A - 0%
+3. N/A - 0%
+Soil: N/A
+Sunlight: N/A
+Watering: N/A
+Uses: N/A
+Care Tips: N/A
+Fun Fact: N/A
+Native Regions: N/A
+Bloom Season: N/A
+Explanation: No flower was detected in the provided image. Please try again with a clear flower photo.
 """
 
     payload = {
@@ -45,7 +76,7 @@ Explanation: <short explanation>
         ],
         "generationConfig": {
             "temperature": 0.2,
-            "maxOutputTokens": 800,
+            "maxOutputTokens": 1500,
         },
     }
 
@@ -56,69 +87,90 @@ Explanation: <short explanation>
             json=payload,
             timeout=30,
         )
-
-        # 🔥 HANDLE QUOTA ERROR (VERY IMPORTANT)
-        if response.status_code == 429:
-            return demo_fallback()
-
         response.raise_for_status()
         data = response.json()
-
         raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
         return parse_response(raw_text)
 
+    except requests.exceptions.Timeout:
+        return error_result("Request timed out. Please try again.")
+    except requests.exceptions.HTTPError as e:
+        return error_result(f"API error: {e.response.status_code} - {e.response.text}")
     except Exception as e:
-        return demo_fallback()
-
-
-# 🔥 FALLBACK (THIS SAVES YOUR PROJECT)
-def demo_fallback():
-    return {
-        "name": "Sunflower",
-        "scientific_name": "Helianthus annuus",
-        "predictions": [
-            {"name": "Sunflower", "confidence": 92},
-            {"name": "Daisy", "confidence": 5},
-            {"name": "Marigold", "confidence": 3},
-        ],
-        "soil": "Well-drained soil",
-        "uses": "Oil production, decoration",
-        "care_tips": "Full sunlight, moderate watering",
-        "explanation": "Large yellow petals and dark center are key features.",
-        "raw": "Fallback result",
-        "error": "Using demo mode due to API limit",
-    }
+        return error_result(f"Unexpected error: {str(e)}")
 
 
 def parse_response(text: str) -> dict:
+    """Parse the structured Gemini response into a clean dict."""
+
     def extract(label):
-        pattern = rf"{label}:\s*(.+?)(?=\n[A-Z]|\Z)"
-        match = re.search(pattern, text, re.DOTALL)
+        pattern = rf"{label}:\s*(.+?)(?=\n[A-Za-z ]{{1,20}}:|\Z)"
+        match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
         return match.group(1).strip() if match else "N/A"
 
+    # Parse top 3 predictions
     predictions = []
     pred_block = re.search(
-        r"Top 3 Predictions:(.*?)(?=\nSoil:|\Z)", text, re.DOTALL
+        r"Top 3 Predictions:(.*?)(?=\nSoil:|\Z)", text, re.DOTALL | re.IGNORECASE
     )
-
     if pred_block:
         lines = pred_block.group(1).strip().split("\n")
         for line in lines:
-            if line.strip() and line.strip()[0].isdigit():
+            line = line.strip()
+            if line and line[0].isdigit():
                 conf_match = re.search(r"(\d+)%", line)
                 confidence = int(conf_match.group(1)) if conf_match else 80
-                name = re.sub(r"^\d+\.\s*", "", line)
-                name = re.sub(r"\s*-\s*\d+%", "", name).strip()
-                predictions.append({"name": name, "confidence": confidence})
+                name_part = re.sub(r"^\d+\.\s*", "", line)
+                name_part = re.sub(r"\s*-\s*\d+%", "", name_part).strip()
+                predictions.append({"name": name_part, "confidence": confidence})
+
+    if not predictions:
+        predictions = [
+            {"name": extract("Name"), "confidence": 85},
+            {"name": "Similar species", "confidence": 10},
+            {"name": "Unknown variety", "confidence": 5},
+        ]
+
+    # Parse native regions into a list
+    native_raw = extract("Native Regions")
+    native_regions = [r.strip() for r in native_raw.split(",")] if native_raw != "N/A" else []
 
     return {
         "name": extract("Name"),
         "scientific_name": extract("Scientific Name"),
+        "family": extract("Family"),
+        "origin": extract("Origin"),
         "predictions": predictions,
         "soil": extract("Soil"),
+        "sunlight": extract("Sunlight"),
+        "watering": extract("Watering"),
         "uses": extract("Uses"),
         "care_tips": extract("Care Tips"),
+        "fun_fact": extract("Fun Fact"),
+        "native_regions": native_regions,
+        "bloom_season": extract("Bloom Season"),
         "explanation": extract("Explanation"),
         "raw": text,
         "error": None,
+    }
+
+
+def error_result(message: str) -> dict:
+    return {
+        "name": "Error",
+        "scientific_name": "N/A",
+        "family": "N/A",
+        "origin": "N/A",
+        "predictions": [],
+        "soil": "N/A",
+        "sunlight": "N/A",
+        "watering": "N/A",
+        "uses": "N/A",
+        "care_tips": "N/A",
+        "fun_fact": "N/A",
+        "native_regions": [],
+        "bloom_season": "N/A",
+        "explanation": message,
+        "raw": message,
+        "error": message,
     }
