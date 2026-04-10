@@ -1,22 +1,20 @@
 import requests
 import base64
 import re
+import time
 import streamlit as st
 
 API_KEY = st.secrets["API_KEY"]
 
+# Try multiple models in order if one fails
+MODELS = [
+    "gemini-1.5-flash-latest",
+    "gemini-1.5-pro-latest",
+    "gemini-2.0-flash",
+    "gemini-1.0-pro-vision-latest",
+]
 
-def analyze_flower(image_bytes: bytes) -> dict:
-    """
-    Sends image bytes to Gemini Vision API and returns parsed flower info.
-    """
-
-    url = (
-        f"https://generativelanguage.googleapis.com/v1beta/models/"
-        f"gemini-2.0-flash:generateContent?key={API_KEY}"
-    )
-
-    prompt = """
+PROMPT = """
 You are an expert botanist and plant identification AI.
 Carefully analyze the image and identify the flower.
 
@@ -60,55 +58,88 @@ Bloom Season: N/A
 Explanation: No flower was detected in the provided image. Please try again with a clear flower photo.
 """
 
+
+def call_gemini(model: str, image_b64: str) -> dict:
+    """Call a specific Gemini model."""
+    url = (
+        f"https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{model}:generateContent?key={API_KEY}"
+    )
     payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": prompt},
-                    {
-                        "inline_data": {
-                            "mime_type": "image/jpeg",
-                            "data": base64.b64encode(image_bytes).decode("utf-8"),
-                        }
-                    },
-                ]
-            }
-        ],
+        "contents": [{
+            "parts": [
+                {"text": PROMPT},
+                {"inline_data": {
+                    "mime_type": "image/jpeg",
+                    "data": image_b64,
+                }}
+            ]
+        }],
         "generationConfig": {
             "temperature": 0.2,
             "maxOutputTokens": 1500,
         },
     }
+    response = requests.post(
+        url,
+        headers={"Content-Type": "application/json"},
+        json=payload,
+        timeout=30,
+    )
+    response.raise_for_status()
+    data = response.json()
+    raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+    return parse_response(raw_text)
 
-    try:
-        response = requests.post(
-            url,
-            headers={"Content-Type": "application/json"},
-            json=payload,
-            timeout=30,
-        )
-        response.raise_for_status()
-        data = response.json()
-        raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
-        return parse_response(raw_text)
 
-    except requests.exceptions.Timeout:
-        return error_result("Request timed out. Please try again.")
-    except requests.exceptions.HTTPError as e:
-        return error_result(f"API error: {e.response.status_code} - {e.response.text}")
-    except Exception as e:
-        return error_result(f"Unexpected error: {str(e)}")
+def analyze_flower(image_bytes: bytes) -> dict:
+    """
+    Try multiple Gemini models with automatic fallback.
+    Returns parsed flower info dict.
+    """
+    image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+    last_error = None
+
+    for model in MODELS:
+        try:
+            result = call_gemini(model, image_b64)
+            result["model_used"] = model
+            return result
+
+        except requests.exceptions.HTTPError as e:
+            status = e.response.status_code
+            # 429 = quota exceeded → try next model
+            # 404 = model not found → try next model
+            if status in [429, 404]:
+                last_error = f"Model `{model}` unavailable (code {status}), trying next..."
+                time.sleep(1)
+                continue
+            else:
+                return error_result(f"API error {status}: {e.response.text}")
+
+        except requests.exceptions.Timeout:
+            last_error = f"Model `{model}` timed out, trying next..."
+            continue
+
+        except Exception as e:
+            last_error = str(e)
+            continue
+
+    # All models failed
+    return error_result(
+        "⚠️ All Gemini models are currently quota-limited. "
+        "Please wait 1 minute and try again, or update your API key in Streamlit secrets."
+    )
 
 
 def parse_response(text: str) -> dict:
-    """Parse the structured Gemini response into a clean dict."""
+    """Parse structured Gemini response into a clean dict."""
 
     def extract(label):
-        pattern = rf"{label}:\s*(.+?)(?=\n[A-Za-z ]{{1,20}}:|\Z)"
+        pattern = rf"{label}:\s*(.+?)(?=\n[A-Za-z ]{{1,25}}:|\Z)"
         match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
         return match.group(1).strip() if match else "N/A"
 
-    # Parse top 3 predictions
     predictions = []
     pred_block = re.search(
         r"Top 3 Predictions:(.*?)(?=\nSoil:|\Z)", text, re.DOTALL | re.IGNORECASE
@@ -131,7 +162,6 @@ def parse_response(text: str) -> dict:
             {"name": "Unknown variety", "confidence": 5},
         ]
 
-    # Parse native regions into a list
     native_raw = extract("Native Regions")
     native_regions = [r.strip() for r in native_raw.split(",")] if native_raw != "N/A" else []
 
@@ -151,6 +181,7 @@ def parse_response(text: str) -> dict:
         "bloom_season": extract("Bloom Season"),
         "explanation": extract("Explanation"),
         "raw": text,
+        "model_used": "unknown",
         "error": None,
     }
 
@@ -172,5 +203,6 @@ def error_result(message: str) -> dict:
         "bloom_season": "N/A",
         "explanation": message,
         "raw": message,
+        "model_used": "none",
         "error": message,
     }
